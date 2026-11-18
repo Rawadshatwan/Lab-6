@@ -4,10 +4,14 @@ const app = express()
 const port = 4000
 const cors = require('cors');
 const bodyParser = require('body-parser');
+// This is the connection to the MongoDB database
+const mongoose = require('mongoose');
+mongoose.connect('mongodb+srv://admin:admin@phantor.c4auufx.mongodb.net/MoviesDB');
 
 // This will allow the server to accept requests from any origin
 app.use(cors());
 
+// This will allow the server to accept requests from any origin
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -15,42 +19,35 @@ app.use(function(req, res, next) {
   next();
 });
 
+// This will allow the server to parse the body of the request
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// This is the schema for the movie data that will be stored in the MongoDB database
+  const movieSchema = new mongoose.Schema({
+    title: String,
+    year: String,
+    poster: String
+  });
+ 
+  const MovieModel = mongoose.model('MyMovie2', movieSchema);
 
-app.post('/api/movies', (req, res) => {
-  console.log(req.body);
-  res.send("Movie added", req.body.title);
-})
+  // This is the endpoint that will be used to create a new movie in the database
+ app.post('/api/movies', async (req, res)=>{
+
+ const { title, year, poster } = req.body;
+
+ const newMovie = new MovieModel({ title, year, poster });
+ await newMovie.save();
+
+ res.status(201).json({ message: 'Movie created successfully', movie: newMovie });
+ })
 
 // This is the endpoint that will be used to fetch the movie data from the server
-app.get('/api/movies', (req, res) => {
-  const movies = [
-    {
-      "Title": "Avengers: Infinity War (server)",
-      "Year": "2018",
-      "imdbID": "tt4154756",
-      "Type": "movie",
-      "Poster": "https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_SX300.jpg"
-    },
-    {
-      "Title": "Captain America: Civil War (server)",
-      "Year": "2016",
-      "imdbID": "tt3498820",
-      "Type": "movie",
-      "Poster": "https://m.media-amazon.com/images/M/MV5BMjQ0MTgyNjAxMV5BMl5BanBnXkFtZTgwNjUzMDkyODE@._V1_SX300.jpg"
-    },
-    {
-      "Title": "World War Z (server)",
-      "Year": "2013",
-      "imdbID": "tt0816711",
-      "Type": "movie",
-      "Poster": "https://m.media-amazon.com/images/M/MV5BNDQ4YzFmNzktMmM5ZC00MDZjLTk1OTktNDE2ODE4YjM2MjJjXkEyXkFqcGdeQXVyNTA4NzY1MzY@._V1_SX300.jpg"
-    }
-]
-  res.json(movies)
-})
+app.get('/api/movie/:id', async (req, res) => {
+  const movie = await Movie.findById(req.params.id);
+  res.send(movie);
+});
 
 // This is the endpoint that will be used to fetch the movie data from the server
 app.listen(port, () => {
